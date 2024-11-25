@@ -1,0 +1,1 @@
+mongo_conn_str = "mongodb+srv://ak:akshay@cluster0.sh6w1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
