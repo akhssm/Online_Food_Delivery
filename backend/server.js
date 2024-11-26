@@ -1,10 +1,12 @@
+require('dotenv').config(); // Load environment variables
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const authRoutes = require('./Components/authRoutes'); // Adjust the path as needed
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5001; // Use PORT from .env or fallback to 5001
 
 // CORS middleware (allow requests from multiple origins for development)
 app.use(cors({
@@ -22,7 +24,7 @@ app.get('/test', (req, res) => {
 });
 
 // Use authentication routes (adjust the path as necessary)
-app.use('/auth', authRoutes); 
+app.use('/auth', authRoutes);
 
 // Start the server
 app.listen(PORT, () => {
