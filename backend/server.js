@@ -1,66 +1,49 @@
-// require('dotenv').config(); // Load environment variables
-
-// const express = require('express');
-// const cors = require('cors');
-// const bodyParser = require('body-parser');
-// const authRoutes = require('./Components/authRoutes'); // Adjust the path as needed
-
-// const app = express();
-// const PORT = process.env.PORT || 5001; // Use PORT from .env or fallback to 5001
-
-// // CORS middleware (allow requests from multiple origins for development)
-// app.use(cors({
-//   origin: ['http://localhost:3000', 'http://localhost:5173'], // Allow multiple frontend origins
-//   methods: 'GET,POST,PUT,DELETE', // Allowed HTTP methods
-//   credentials: true, // Include credentials if needed (e.g., for cookies)
-// }));
-
-// // Body parser middleware for JSON requests
-// app.use(bodyParser.json());
-
-// // Example route to test if the backend is working
-// app.get('/test', (req, res) => {
-//   res.json({ message: 'Backend is working!' });
-// });
-
-// // Use authentication routes (adjust the path as necessary)
-// app.use('/auth', authRoutes);
-
-// // Start the server
-// app.listen(PORT, () => {
-//   console.log(`Server is running on http://localhost:${PORT}`);
-// });
-
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config(); // Load environment variables from .env
 const express = require('express');
-const cors = require('cors');
 const bodyParser = require('body-parser');
-const userRoutes = require('./routes/userRoutes'); // Import user routes using CommonJS
+const cors = require('cors');
+const mongoose = require('mongoose');
+const userRoutes = require('./routes/userRoutes');
+const bcrypt = require('bcryptjs');
 
+// Create an Express app
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5001; // Use PORT from .env or default to 5001
+const MONGO_URI = process.env.MONGO_URI; // Use MongoDB URI from .env
 
-// Enable CORS with specific origins and credentials
-app.use(
-  cors({
-    origin: ['http://localhost:3000', 'http://localhost:5173'], // Allow requests from these origins
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
-    credentials: true, // Allow cookies and credentials
-  })
-);
+// Connect to MongoDB
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((error) => console.error('MongoDB connection error:', error));
 
-// Middleware to parse JSON requests
+// Middleware
+app.use(cors());
 app.use(bodyParser.json());
 
-// Test route to check if the backend is running
-app.get('/test', (req, res) => {
-  res.json({ message: 'Backend is working!' });
-});
-
-// Use routes for user-related operations
+// Routes
 app.use('/user', userRoutes);
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+// Seed a user with a hashed password (for testing purposes)
+const seedUser = async () => {
+  const User = require('./models/userModel'); // Adjust the path as needed
+  try {
+    const hashedPassword = await bcrypt.hash('password123', 10);
+    const user = new User({
+      username: 'testuser',
+      password: hashedPassword,
+    });
+    await user.save();
+    console.log('Test user seeded successfully');
+  } catch (error) {
+    console.error('Error seeding test user:', error.message);
+  }
+};
+
+// Start the server and seed the test user
+app.listen(PORT, async () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+  await seedUser(); // Comment this out after the first run
 });
