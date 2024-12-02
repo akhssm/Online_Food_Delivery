@@ -16,7 +16,7 @@ const restaurantController = require('../controllers/restaurantController');
 const router = express.Router();
 
 // Route to add a new restaurant and its menu items
-router.post('/', restaurantController.addNewRestaurant);
+router.post('/basic', restaurantController.addNewRestaurant);
 
 // Route to get a restaurant by its ID along with its menu items
 router.get('/:id', restaurantController.getRestaurantById);

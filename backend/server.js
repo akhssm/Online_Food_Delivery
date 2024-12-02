@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
-const bcrypt = require('bcryptjs');
+const restaurantRoutes = require('./routes/restaurantRoute'); // Import restaurant routes
 
 // Create an Express app
 const app = express();
@@ -25,25 +25,27 @@ app.use(bodyParser.json());
 
 // Routes
 app.use('/user', userRoutes);
+app.use('/api/restaurants', restaurantRoutes); // Use restaurant routes
 
-// Seed a user with a hashed password (for testing purposes)
-const seedUser = async () => {
-  const User = require('./models/userModel'); // Adjust the path as needed
+// Seed a restaurant (for testing purposes)
+const seedRestaurant = async () => {
+  const Restaurant = require('./models/restaurantModel'); // Adjust the path as needed
   try {
-    const hashedPassword = await bcrypt.hash('password123', 10);
-    const user = new User({
-      username: 'testuser',
-      password: hashedPassword,
+    const restaurant = new Restaurant({
+      name: 'Sample Restaurant',
+      description: 'A test restaurant for seeding purposes',
+      rating: 4.2,
+      imageUrl: 'https://example.com/sample-restaurant.jpg',
     });
-    await user.save();
-    console.log('Test user seeded successfully');
+    await restaurant.save();
+    console.log('Test restaurant seeded successfully');
   } catch (error) {
-    console.error('Error seeding test user:', error.message);
+    console.error('Error seeding test restaurant:', error.message);
   }
 };
 
-// Start the server and seed the test user
+// Start the server and seed the test restaurant
 app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
-  await seedUser(); // Comment this out after the first run
+  await seedRestaurant(); // Comment this out after the first run
 });
