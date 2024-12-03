@@ -5,7 +5,8 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
 const restaurantRoutes = require('./routes/restaurantRoute');
-const menuRoutes = require('./routes/menuRoutes'); // Corrected the import name for menuRoutes
+const menuRoutes = require('./routes/menuRoutes');
+const cartRoutes = require('./routes/cartRoutes'); // Import cartRoutes
 
 // Create an Express app
 const app = express();
@@ -33,7 +34,8 @@ app.use(bodyParser.json());
 // Routes
 app.use('/user', userRoutes);
 app.use('/api/restaurants', restaurantRoutes);
-app.use('/api/menu', menuRoutes); // Use menu routes
+app.use('/api/menu', menuRoutes);
+app.use('/api/cart', cartRoutes); // Use cart routes for cart functionality
 
 // Seed a menu item (for testing purposes)
 const seedMenu = async () => {
