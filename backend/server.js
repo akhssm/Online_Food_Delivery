@@ -4,12 +4,19 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
-const restaurantRoutes = require('./routes/restaurantRoute'); // Import restaurant routes
+const restaurantRoutes = require('./routes/restaurantRoute');
+const menuRoutes = require('./routes/menuRoutes'); // Corrected the import name for menuRoutes
 
 // Create an Express app
 const app = express();
 const PORT = process.env.PORT || 5001; // Use PORT from .env or default to 5001
 const MONGO_URI = process.env.MONGO_URI; // Use MongoDB URI from .env
+
+// Check if MONGO_URI is missing
+if (!MONGO_URI) {
+  console.error('MongoDB URI is not provided in the environment variables!');
+  process.exit(1); // Exit the process if MONGO_URI is not set
+}
 
 // Connect to MongoDB
 mongoose.connect(MONGO_URI, {
@@ -25,27 +32,28 @@ app.use(bodyParser.json());
 
 // Routes
 app.use('/user', userRoutes);
-app.use('/api/restaurants', restaurantRoutes); // Use restaurant routes
+app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/menu', menuRoutes); // Use menu routes
 
-// Seed a restaurant (for testing purposes)
-const seedRestaurant = async () => {
-  const Restaurant = require('./models/restaurantModel'); // Adjust the path as needed
+// Seed a menu item (for testing purposes)
+const seedMenu = async () => {
+  const MenuItem = require('./models/menuModel'); // Adjust the path as needed
   try {
-    const restaurant = new Restaurant({
-      name: 'Sample Restaurant',
-      description: 'A test restaurant for seeding purposes',
-      rating: 4.2,
-      imageUrl: 'https://example.com/sample-restaurant.jpg',
+    const menuItem = new MenuItem({
+      restaurantId: '64b4f2d7b45a2e0011223344', // Replace with a valid restaurant ID
+      name: 'Sample Dish',
+      price: 10.99,
+      quantity: 50,
     });
-    await restaurant.save();
-    console.log('Test restaurant seeded successfully');
+    await menuItem.save();
+    console.log('Test menu item seeded successfully');
   } catch (error) {
-    console.error('Error seeding test restaurant:', error.message);
+    console.error('Error seeding menu item:', error.message);
   }
 };
 
-// Start the server and seed the test restaurant
+// Start the server and seed the test menu item
 app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
-  await seedRestaurant(); // Comment this out after the first run
+  await seedMenu(); // Comment this out after the first run
 });
