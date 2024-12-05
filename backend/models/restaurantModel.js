@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
 
 const restaurantSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    description: { type: String, required: true }, // Description field
-    rating: { type: Number, required: true },
-    imageUrl: { type: String, required: true },
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  rating: { type: Number, required: true },
+  imageUrl: { type: String, required: true }  // Ensure this is correctly defined
 });
 
-const Restaurant = mongoose.model('Restaurant', restaurantSchema);
-
-module.exports = Restaurant;
+// Export the model
+module.exports = mongoose.model('Restaurant', restaurantSchema);
