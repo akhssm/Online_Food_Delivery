@@ -1,42 +1,44 @@
-// const express = require('express');
 // const mongoose = require('mongoose');
+// const express = require('express');
 // const cors = require('cors');
-// const userRoutes = require('./routes/userRoutes'); // Adjust if needed
+// const dotenv = require('dotenv');
+
+// const userRoutes = require('./routes/userRoutes');
+// const restaurantRoutes = require('./routes/restaurantRoute');
+
+// dotenv.config();
 
 // const app = express();
 
 // // Middleware
-// app.use(express.json()); // Parse JSON bodies
-// app.use(cors()); // Allow CORS for frontend requests
+// app.use(express.json());
+// app.use(cors());
 
 // // MongoDB connection
 // mongoose
-//   .connect('mongodb://localhost:27017/userdb', { useNewUrlParser: true, useUnifiedTopology: true })
-//   .then(() => {
-//     console.log('Connected To MongoDB Successfully');
-//   })
-//   .catch((err) => {
-//     console.log('MongoDB connection error:', err);
-//   });
+//   .connect(process.env.MONGO_URI)
+//   .then(() => console.log('Connected to MongoDB Successfully'))
+//   .catch((err) => console.error('MongoDB connection error:', err));
 
 // // Routes
-// app.use('/api/user', userRoutes); // Use the userRoutes for any /api/user requests
+// app.use('/api/user', userRoutes);
+// app.use('/api/restaurants', restaurantRoutes);
 
-// // Test Route
+// // Test route
 // app.get('/test', (req, res) => {
 //   res.send('Backend is working!');
 // });
 
-// // Error handling for unhandled routes
+// // Error handling
 // app.use((req, res) => {
-//   res.status(404).send({ message: 'Route not found' });
+//   res.status(404).json({ message: 'Route not found' });
 // });
 
-// // Server
+// // Server setup
 // const PORT = process.env.PORT || 5001;
-// app.listen(PORT, () => {
-//   console.log(`Server is running on port ${PORT}`);
-// });
+// app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
 
 
 const mongoose = require('mongoose');
@@ -44,16 +46,18 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
+// Import routes
 const userRoutes = require('./routes/userRoutes');
 const restaurantRoutes = require('./routes/restaurantRoute');
 
+// Load environment variables
 dotenv.config();
 
 const app = express();
 
 // Middleware
-app.use(express.json());
-app.use(cors());
+app.use(express.json()); // To parse JSON requests
+app.use(cors()); // To enable Cross-Origin Resource Sharing
 
 // MongoDB connection
 mongoose
@@ -70,9 +74,17 @@ app.get('/test', (req, res) => {
   res.send('Backend is working!');
 });
 
-// Error handling
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+// Error handling for undefined routes (Route not found)
+app.use((req, res, next) => {
+  const error = new Error('Route not found');
+  error.status = 404;
+  next(error);
+});
+
+// Generic error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({ message: err.message || 'Internal Server Error' });
 });
 
 // Server setup
