@@ -62,7 +62,7 @@ app.use(cors()); // To enable Cross-Origin Resource Sharing
 
 // MongoDB connection
 mongoose
-  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(process.env.MONGO_URI)  // Removed deprecated options
   .then(() => console.log('Connected to MongoDB Successfully'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
@@ -83,13 +83,12 @@ app.use((req, res, next) => {
   next(error);
 });
 
-// Generic error handling middleware
+// Generic error handling middleware (must be last)
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error(err.stack); // Log the stack trace for debugging
   res.status(err.status || 500).json({ message: err.message || 'Internal Server Error' });
 });
 
 // Server setup
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
