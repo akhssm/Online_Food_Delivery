@@ -49,6 +49,7 @@ const dotenv = require('dotenv');
 // Import routes
 const userRoutes = require('./routes/userRoutes');
 const restaurantRoutes = require('./routes/restaurantRoute');
+const menuRoutes = require('./routes/menuRoutes'); // Import the menu routes
 
 // Load environment variables
 dotenv.config();
@@ -61,13 +62,14 @@ app.use(cors()); // To enable Cross-Origin Resource Sharing
 
 // MongoDB connection
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Connected to MongoDB Successfully'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
 // Routes
-app.use('/api/user', userRoutes);
-app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/user', userRoutes); // User routes
+app.use('/api/restaurants', restaurantRoutes); // Restaurant routes
+app.use('/api/menu', menuRoutes); // Menu routes
 
 // Test route
 app.get('/test', (req, res) => {
@@ -90,3 +92,4 @@ app.use((err, req, res, next) => {
 // Server setup
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+

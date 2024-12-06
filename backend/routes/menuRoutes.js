@@ -1,40 +1,44 @@
 const express = require('express');
 const router = express.Router();
-const MenuItem = require('../models/menuModel');
+const MenuItem = require('../models/menuModel'); // Import the MenuItem model
 
-// Fetch all menu items
-router.get('/', async (req, res) => {
+// Create a new menu item
+router.post('/', async (req, res) => {
+  const { name, price, quantity, restaurantId } = req.body;
+
+  if (!name || !price || !quantity || !restaurantId) {
+    return res.status(400).json({ message: 'All fields are required: name, price, quantity, and restaurantId.' });
+  }
+
   try {
-    const menuItems = await MenuItem.find();
-    if (menuItems.length === 0) {
-      return res.status(404).json({ message: 'No menu items found' });
-    }
-    res.json(menuItems);
-  } catch (err) {
-    res.status(500).json({ error: 'Error fetching menu items', details: err.message });
+    const newItem = await MenuItem.create({ name, price, quantity, restaurantId });
+    res.status(201).json(newItem);
+  } catch (error) {
+    console.error('Error creating menu item:', error);
+    res.status(500).json({ message: 'Failed to create menu item.' });
   }
 });
 
-// Add a new menu item
-router.post('/', async (req, res) => {
-  const { name, price, quantity } = req.body;
-
-  // Input validation
-  if (!name || !price || !quantity) {
-    return res.status(400).json({ message: 'All fields (name, price, quantity) are required' });
-  }
-
+// Get menu items for a specific restaurant
+router.get('/restaurant/:id', async (req, res) => {
   try {
-    const newItem = new MenuItem({
-      name,
-      price,
-      quantity,
-    });
+    const menuItems = await MenuItem.find({ restaurantId: req.params.id });
+    res.status(200).json(menuItems);
+  } catch (error) {
+    console.error('Error fetching menu items for restaurant:', error);
+    res.status(500).json({ message: 'Failed to fetch menu items.' });
+  }
+});
 
-    await newItem.save();
-    res.status(201).json(newItem);
-  } catch (err) {
-    res.status(500).json({ error: 'Error adding menu item', details: err.message });
+
+// Get menu items for a specific restaurant
+router.get('/restaurant/:id', async (req, res) => {
+  try {
+    const menuItems = await MenuItem.find({ restaurantId: req.params.id });
+    res.status(200).json(menuItems);
+  } catch (error) {
+    console.error('Error fetching menu items for restaurant:', error);
+    res.status(500).json({ message: 'Failed to fetch menu items.' });
   }
 });
 
@@ -42,25 +46,19 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const { name, price, quantity } = req.body;
 
-  // Ensure at least one field is updated
-  if (!name && !price && !quantity) {
-    return res.status(400).json({ message: 'At least one field (name, price, quantity) is required for update' });
-  }
-
   try {
     const updatedItem = await MenuItem.findByIdAndUpdate(
       req.params.id,
       { name, price, quantity },
       { new: true, runValidators: true }
     );
-
     if (!updatedItem) {
-      return res.status(404).json({ message: 'Menu item not found' });
+      return res.status(404).json({ message: 'Menu item not found.' });
     }
-
-    res.json(updatedItem);
-  } catch (err) {
-    res.status(500).json({ error: 'Error updating menu item', details: err.message });
+    res.status(200).json(updatedItem);
+  } catch (error) {
+    console.error('Error updating menu item:', error);
+    res.status(500).json({ message: 'Failed to update menu item.' });
   }
 });
 
@@ -68,14 +66,13 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const deletedItem = await MenuItem.findByIdAndDelete(req.params.id);
-
     if (!deletedItem) {
-      return res.status(404).json({ message: 'Menu item not found' });
+      return res.status(404).json({ message: 'Menu item not found.' });
     }
-
-    res.json({ message: 'Menu item deleted successfully', deletedItem });
-  } catch (err) {
-    res.status(500).json({ error: 'Error deleting menu item', details: err.message });
+    res.status(200).json({ message: 'Menu item deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting menu item:', error);
+    res.status(500).json({ message: 'Failed to delete menu item.' });
   }
 });
 
