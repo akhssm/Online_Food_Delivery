@@ -50,6 +50,7 @@ const dotenv = require('dotenv');
 const userRoutes = require('./routes/userRoutes');
 const restaurantRoutes = require('./routes/restaurantRoute');
 const menuRoutes = require('./routes/menuRoutes'); // Import the menu routes
+const cartRoutes = require('./routes/cartRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -61,15 +62,17 @@ app.use(express.json()); // To parse JSON requests
 app.use(cors()); // To enable Cross-Origin Resource Sharing
 
 // MongoDB connection
-mongoose
-  .connect(process.env.MONGO_URI)  // Removed deprecated options
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB Successfully'))
   .catch((err) => console.error('MongoDB connection error:', err));
+
 
 // Routes
 app.use('/api/user', userRoutes); // User routes
 app.use('/api/restaurants', restaurantRoutes); // Restaurant routes
 app.use('/api/menu', menuRoutes); // Menu routes
+app.use('/api/cart', cartRoutes); // Use cart routes
+
 
 // Test route
 app.get('/test', (req, res) => {

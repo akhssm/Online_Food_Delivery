@@ -1,101 +1,129 @@
+// routes/cartRoutes.js
 const express = require('express');
-const Cart = require('../models/cartModel'); // Import the Cart model
-const MenuItem = require('../models/menuModel'); // Import the MenuItem model instead of Product
+const Cart = require('../models/cartModel');
+const Menu = require('../models/menuModel');  // Assuming Menu model exists
 const router = express.Router();
 
-// Get Cart for a specific user
-router.get('/:userId', async (req, res) => {
-  try {
-    const cart = await Cart.findOne({ userId: req.params.userId }).populate('items.menuItemId'); // Populating the correct field
-    if (!cart) return res.status(404).json({ message: 'Cart not found' });
-    res.json(cart);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+// Helper function to calculate the total cost
+const calculateTotal = (items) => {
+  return items.reduce((total, item) => total + (parseFloat(item.price) || 0) * item.quantity, 0);
+};
 
-// Add Item to Cart
+// Add or update item in the cart
 router.post('/:userId', async (req, res) => {
-  const { menuItemId, quantity } = req.body; // Changed productId to menuItemId
-  try {
-    let cart = await Cart.findOne({ userId: req.params.userId });
+  const { userId } = req.params;
+  const { menuId, quantity } = req.body;  // Menu item id and quantity
 
-    // Create a new cart if none exists for the user
-    if (!cart) {
-      cart = new Cart({ userId: req.params.userId, items: [] });
+  try {
+    // Find the menu item to get the price
+    const menuItem = await Menu.findById(menuId);
+    if (!menuItem) {
+      return res.status(404).json({ message: 'Menu item not found' });
     }
 
-    const menuItem = await MenuItem.findById(menuItemId); // Find menu item by ID
-    if (!menuItem) return res.status(400).json({ message: 'Menu item not found' });
+    // Find the user's cart
+    let cart = await Cart.findOne({ userId });
+    if (!cart) {
+      // If no cart exists, create one
+      cart = new Cart({ userId, items: [], total: 0 });
+    }
 
-    // Check if the item is already in the cart
-    const itemIndex = cart.items.findIndex(item => item.menuItemId.toString() === menuItemId);
-    if (itemIndex >= 0) {
-      // Update quantity if item already exists
-      cart.items[itemIndex].quantity += quantity;
+    // Check if item already exists in the cart
+    const existingItem = cart.items.find(item => item.menuId.toString() === menuId);
+    if (existingItem) {
+      // Update quantity if the item already exists
+      existingItem.quantity += quantity;
     } else {
-      // Add new item to cart
+      // Add new item to the cart
       cart.items.push({
-        menuItemId,
-        quantity,
+        menuId,
         name: menuItem.name,
         price: menuItem.price,
+        quantity: quantity || 1,
       });
     }
 
-    // Recalculate the total amount
-    cart.totalAmount = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
+    // Recalculate total
+    cart.total = calculateTotal(cart.items);
 
-    await cart.save(); // Save the updated cart
-    res.json(cart);
+    // Save the updated cart
+    await cart.save();
+    res.status(200).json(cart);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Error adding item to the cart' });
   }
 });
 
-// Remove Item from Cart
-router.delete('/:userId/:itemId', async (req, res) => {
+// Get cart by userId
+router.get('/:userId', async (req, res) => {
+  const { userId } = req.params;
+
   try {
-    const cart = await Cart.findOne({ userId: req.params.userId });
-    if (!cart) return res.status(404).json({ message: 'Cart not found' });
-
-    // Remove item by itemId
-    cart.items = cart.items.filter(item => item._id.toString() !== req.params.itemId);
-
-    // Recalculate the total amount
-    cart.totalAmount = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
-
-    await cart.save(); // Save the updated cart
-    res.json(cart);
+    const cart = await Cart.findOne({ userId }).populate('items.menuId');
+    if (!cart) {
+      return res.status(404).json({ message: 'Cart not found' });
+    }
+    res.status(200).json(cart);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Error retrieving the cart' });
   }
 });
 
-// Update Item Quantity
-router.put('/:userId/:itemId', async (req, res) => {
+// Update item quantity in the cart
+router.put('/:userId/:menuId', async (req, res) => {
+  const { userId, menuId } = req.params;
   const { quantity } = req.body;
+
   try {
-    const cart = await Cart.findOne({ userId: req.params.userId });
-    if (!cart) return res.status(404).json({ message: 'Cart not found' });
+    const cart = await Cart.findOne({ userId });
+    if (!cart) {
+      return res.status(404).json({ message: 'Cart not found' });
+    }
 
-    const item = cart.items.find(item => item._id.toString() === req.params.itemId);
-    if (!item) return res.status(404).json({ message: 'Item not found' });
+    const item = cart.items.find(item => item.menuId.toString() === menuId);
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found in cart' });
+    }
 
-    // Update item quantity
-    item.quantity = quantity;
+    // Update the quantity
+    item.quantity = Math.max(quantity, 1);
 
-    // Recalculate the total amount
-    cart.totalAmount = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
+    // Recalculate the total
+    cart.total = calculateTotal(cart.items);
 
-    await cart.save(); // Save the updated cart
-    res.json(cart);
+    // Save the updated cart
+    await cart.save();
+    res.status(200).json(cart);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Error updating cart item' });
+  }
+});
+
+// Remove item from the cart
+router.delete('/:userId/:menuId', async (req, res) => {
+  const { userId, menuId } = req.params;
+
+  try {
+    const cart = await Cart.findOne({ userId });
+    if (!cart) {
+      return res.status(404).json({ message: 'Cart not found' });
+    }
+
+    // Remove the item from the cart
+    cart.items = cart.items.filter(item => item.menuId.toString() !== menuId);
+
+    // Recalculate the total
+    cart.total = calculateTotal(cart.items);
+
+    // Save the updated cart
+    await cart.save();
+    res.status(200).json(cart);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error removing item from cart' });
   }
 });
 
