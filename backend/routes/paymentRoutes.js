@@ -1,31 +1,34 @@
-// routes/paymentRoutes.js
-
+// paymentRoutes.js
 const express = require('express');
 const router = express.Router();
+const Payment = require('../models/paymentModel'); // Make sure your Payment model is correctly set up
 
-// Placeholder function for payment processing (you can replace it with actual logic or API calls)
-const processPayment = (paymentInfo) => {
-  // Example of payment processing logic (you can replace it with actual logic)
-  console.log('Processing payment with the following details:', paymentInfo);
-  return true; // Assume payment is successful
-};
+// POST route for saving payment details
+router.post('/', async (req, res) => {
+  try {
+    // Get payment data from request body
+    const { cardNumber, expirationDate, cvv, phoneNumber, address } = req.body;
 
-// POST route to handle payment submission
-router.post('/', (req, res) => {
-  const { cardNumber, expirationDate, cvv, phoneNumber, address } = req.body;
+    // Create a new payment document
+    const newPayment = new Payment({
+      cardNumber,
+      expirationDate,
+      cvv,
+      phoneNumber,
+      address,
+    });
 
-  if (!cardNumber || !expirationDate || !cvv || !phoneNumber || !address) {
-    return res.status(400).json({ message: 'Missing payment information' });
-  }
+    // Save the payment document to MongoDB
+    const savedPayment = await newPayment.save();
 
-  // Process the payment (you can replace this with your actual logic)
-  const paymentSuccess = processPayment(req.body);
-
-  if (paymentSuccess) {
-    // You can also save order details to the database if necessary
-    return res.status(200).json({ message: 'Payment successful', orderConfirmed: true });
-  } else {
-    return res.status(500).json({ message: 'Payment processing failed' });
+    // Return success response
+    res.status(201).json({
+      message: 'Payment details saved successfully',
+      payment: savedPayment,
+    });
+  } catch (err) {
+    console.error('Error saving payment details:', err);
+    res.status(500).json({ message: 'Failed to save payment details' });
   }
 });
 

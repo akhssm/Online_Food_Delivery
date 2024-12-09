@@ -42,7 +42,6 @@
 
 
 // server.js
-
 const mongoose = require('mongoose');
 const express = require('express');
 const cors = require('cors');
@@ -65,7 +64,10 @@ app.use(express.json());
 app.use(cors());
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
   .then(() => console.log('Connected to MongoDB Successfully'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
@@ -76,7 +78,7 @@ app.use('/api/menu', menuRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/payment', paymentRoutes); // Use payment routes
 
-// Test route
+// Test route (for quick checks)
 app.get('/test', (req, res) => {
   res.send('Backend is working!');
 });
