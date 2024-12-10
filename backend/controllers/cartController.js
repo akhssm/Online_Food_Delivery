@@ -1,10 +1,14 @@
 const Cart = require('../models/cartModel');
-const MenuItem = require('../models/menuModel'); // Import MenuItem model
+const MenuItem = require('../models/menuModel');
+
+// Helper function to calculate the total cost of the cart
+const calculateTotal = (items) =>
+  items.reduce((total, item) => total + (parseFloat(item.price) || 0) * item.quantity, 0);
 
 // Get Cart for a specific user
 const getCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ userId: req.params.userId }).populate('items.menuItemId'); // Correct field for population
+    const cart = await Cart.findOne({ userId: req.params.userId }).populate('items.menuId');
     if (!cart) {
       return res.status(404).json({ message: 'Cart not found' });
     }
@@ -16,30 +20,39 @@ const getCart = async (req, res) => {
 };
 
 // Add Item to Cart
+const mongoose = require('mongoose');
+
 const addItemToCart = async (req, res) => {
-  const { menuItemId, quantity } = req.body; // Using menuItemId instead of productId
+  const { menuId, quantity, name, price } = req.body;
+  const userId = req.params.userId.trim(); // Trim whitespace
+
+  // Validate userId as a valid ObjectId
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: 'Invalid userId format' });
+  }
+
   try {
-    let cart = await Cart.findOne({ userId: req.params.userId });
+    let cart = await Cart.findOne({ userId });
 
     // Create a new cart if none exists for the user
     if (!cart) {
-      cart = new Cart({ userId: req.params.userId, items: [] });
+      cart = new Cart({ userId, items: [] });
     }
 
-    const menuItem = await MenuItem.findById(menuItemId); // Fetching menu item by ID
+    const menuItem = { _id: menuId, name, price }; // Mocking Menu item for testing purposes
     if (!menuItem) {
       return res.status(400).json({ message: 'Menu item not found' });
     }
 
     // Check if the item already exists in the cart
-    const itemIndex = cart.items.findIndex(item => item.menuItemId.toString() === menuItemId);
+    const itemIndex = cart.items.findIndex(item => item.menuId.toString() === menuId);
     if (itemIndex >= 0) {
       // Update quantity if the item already exists
       cart.items[itemIndex].quantity += quantity;
     } else {
       // Add new item to cart
       cart.items.push({
-        menuItemId,
+        menuId,
         quantity,
         name: menuItem.name,
         price: menuItem.price,
@@ -47,15 +60,16 @@ const addItemToCart = async (req, res) => {
     }
 
     // Recalculate the total amount
-    cart.totalAmount = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
+    cart.totalAmount = calculateTotal(cart.items);
 
     await cart.save(); // Save the updated cart
     res.json(cart);
   } catch (err) {
-    console.error(err);
+    console.error('Error while adding item to cart:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 // Remove Item from Cart
 const removeItemFromCart = async (req, res) => {
@@ -65,19 +79,15 @@ const removeItemFromCart = async (req, res) => {
       return res.status(404).json({ message: 'Cart not found' });
     }
 
-    // Remove item by itemId (cart item ID)
     const itemIndex = cart.items.findIndex(item => item._id.toString() === req.params.itemId);
     if (itemIndex === -1) {
       return res.status(404).json({ message: 'Item not found' });
     }
 
-    // Remove the item from the cart
     cart.items.splice(itemIndex, 1);
+    cart.totalAmount = calculateTotal(cart.items);
 
-    // Recalculate the total amount
-    cart.totalAmount = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
-
-    await cart.save(); // Save the updated cart
+    await cart.save();
     res.json(cart);
   } catch (err) {
     console.error(err);
@@ -99,13 +109,10 @@ const updateItemQuantity = async (req, res) => {
       return res.status(404).json({ message: 'Item not found' });
     }
 
-    // Update item quantity
     item.quantity = quantity;
+    cart.totalAmount = calculateTotal(cart.items);
 
-    // Recalculate the total amount
-    cart.totalAmount = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
-
-    await cart.save(); // Save the updated cart
+    await cart.save();
     res.json(cart);
   } catch (err) {
     console.error(err);
