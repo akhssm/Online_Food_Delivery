@@ -1,0 +1,20 @@
+// Mock authentication middleware (replace with actual logic)
+const authenticate = (req, res, next) => {
+    const token = req.header('Authorization');
+  
+    if (!token) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+  
+    // Example: Validate token (e.g., JWT)
+    try {
+      // Decode the token here (if using JWT or any other logic)
+      req.user = {}; // Add user info if required
+      next();
+    } catch (error) {
+      res.status(401).json({ message: 'Invalid or expired token' });
+    }
+  };
+  
+  module.exports = authenticate;
+  
