@@ -1,4 +1,6 @@
 const MenuItem = require('../models/menuModel'); // Assuming you have a MenuItem model
+
+// Fetch menu items for a specific restaurant
 exports.getMenu = async (req, res) => {
   try {
     const { id: restaurantId } = req.params;
@@ -14,7 +16,6 @@ exports.getMenu = async (req, res) => {
     res.status(500).send('Server Error');
   }
 };
-
 
 // Add a new menu item to the restaurant
 exports.addMenuItem = async (req, res) => {
@@ -38,7 +39,6 @@ exports.addMenuItem = async (req, res) => {
     res.status(500).send('Server Error');
   }
 };
-
 
 // Update an existing menu item
 exports.updateMenuItem = async (req, res) => {
@@ -64,16 +64,16 @@ exports.updateMenuItem = async (req, res) => {
   }
 };
 
-
-
-
 // Delete a menu item
 exports.deleteMenuItem = async (req, res) => {
   try {
-    const menuItemId = req.params.id;
+    const { restaurantId, menuItemId } = req.params; // Get both restaurantId and menuItemId from params
 
-    // Find and delete the menu item
-    const deletedMenuItem = await MenuItem.findByIdAndDelete(menuItemId);
+    // Find and delete the menu item for the specific restaurant
+    const deletedMenuItem = await MenuItem.findOneAndDelete({
+      _id: menuItemId,
+      restaurantId: restaurantId  // Ensure the deletion is for the specific restaurant
+    });
 
     if (!deletedMenuItem) {
       return res.status(404).send('Menu item not found');
